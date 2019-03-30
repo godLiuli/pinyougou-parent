@@ -1,8 +1,16 @@
 package com.pinyougou.user.controller;
 import java.util.List;
+import java.util.Map;
 
+
+import com.pinyougou.order.service.OrderService;
+import com.pinyougou.pojo.TbComment;
+import com.pinyougou.pojo.TbOrder;
+import com.pinyougou.pojogroup.OrderWithItems;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import com.alibaba.dubbo.config.annotation.Reference;
 import com.pinyougou.pojo.TbUser;
@@ -10,6 +18,7 @@ import com.pinyougou.user.service.UserService;
 
 import entity.PageResult;
 import entity.Result;
+import util.IdWorker;
 import util.PhoneFormatCheckUtils;
 /**
  * controller
@@ -20,28 +29,11 @@ import util.PhoneFormatCheckUtils;
 @RequestMapping("/user")
 public class UserController {
 
-	@Reference
+	@Reference(timeout = 10000)
 	private UserService userService;
-	
-	/**
-	 * 返回全部列表
-	 * @return
-	 */
-	@RequestMapping("/findAll")
-	public List<TbUser> findAll(){			
-		return userService.findAll();
-	}
-	
-	
-	/**
-	 * 返回全部列表
-	 * @return
-	 */
-	@RequestMapping("/findPage")
-	public PageResult  findPage(int page,int rows){			
-		return userService.findPage(page, rows);
-	}
-	
+	@Reference(timeout = 100000)
+	private OrderService orderService;
+
 	/**
 	 * 增加
 	 * @param user
@@ -78,43 +70,8 @@ public class UserController {
 		}
 	}	
 	
-	/**
-	 * 获取实体
-	 * @param id
-	 * @return
-	 */
-	@RequestMapping("/findOne")
-	public TbUser findOne(Long id){
-		return userService.findOne(id);		
-	}
-	
-	/**
-	 * 批量删除
-	 * @param ids
-	 * @return
-	 */
-	@RequestMapping("/delete")
-	public Result delete(Long [] ids){
-		try {
-			userService.delete(ids);
-			return new Result(true, "删除成功"); 
-		} catch (Exception e) {
-			e.printStackTrace();
-			return new Result(false, "删除失败");
-		}
-	}
-	
-		/**
-	 * 查询+分页
-	 * @param brand
-	 * @param page
-	 * @param rows
-	 * @return
-	 */
-	@RequestMapping("/search")
-	public PageResult search(@RequestBody TbUser user, int page, int rows  ){
-		return userService.findPage(user, page, rows);		
-	}
+
+
 	
 	/**
 	 * 点击获取验证码
@@ -134,5 +91,50 @@ public class UserController {
 			return new Result(false, "失败！！！");
 		}
 	}
+
+
+	@RequestMapping("/findOrderList")
+	public PageResult findOrderList(@RequestBody Map<String,String> searchMap){
+		String username = SecurityContextHolder.getContext().getAuthentication().getName();
+		if ("".equals(searchMap.get("pageSize"))||searchMap.get("pageSize")==null){
+			searchMap.put("pageSize","10");
+		}
+		if ("".equals(searchMap.get("pageNum"))||searchMap.get("pageNum")==null){
+			searchMap.put("pageNum","1");
+		}
+
+
+		searchMap.put("username",username);
+		return  orderService.findOrderList(searchMap);
+
+	}
+
+	@RequestMapping("/findOneOrder")
+	public OrderWithItems findOneOrder(Long id){
+		return	orderService.findOneOrder(id);
+	}
+
+
+	/**
+	 * 评论方法，根据订单ID添加评论数据，在此不细分sku，默认item集合中的第一个数据为sku，同时订单表绑定itemID，和orderID
+	 * @param comment
+	 * @return
+	 */
+	@RequestMapping("/makeComment")
+	public Result makeComment(@RequestBody TbComment comment){
+		try {
+			orderService.makeComment(comment);
+			return new Result(true,"添加评论成功！");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new Result(true,"添加评论失败！！！");
+		}
+	}
+
+	@RequestMapping("/autoChangeStatus")
+	public void autoChangeStatus(Long orderId, String status){
+		orderService.autoChangeStatus(orderId,status);
+	}
+
 	
 }

@@ -107,14 +107,20 @@
             </exclusion>   
         </exclusions>   
 	</dependency>  
-
+	<!--redis-->
 	<dependency>
 		<groupId>com.pinyougou</groupId>
 		<artifactId>pinyougou-common</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</dependency>
-	
-   </dependencies>
+	  <!--添加订单依赖-->
+	  <dependency>
+		  <groupId>com.pinyougou</groupId>
+		  <artifactId>pinyougou-order-interface</artifactId>
+		  <version>0.0.1-SNAPSHOT</version>
+	  </dependency>
+
+  </dependencies>
   
   
     <build>  
